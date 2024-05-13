@@ -14,4 +14,4 @@ const QueueContainer = ({ index, algorithmInfo, priorityInfo }) => {
 }
 
 
-module.exports = QueueContainer;
+export default QueueContainer;

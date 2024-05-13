@@ -5,6 +5,8 @@
     --primary: #FD8D14;
     --text-light: #F4F4F2;
     --text-dark: #495464;
+    --success: #59CE8F;
+    --alert: #FF1E00;
 }
 
 @font-face {
@@ -255,7 +257,7 @@ ul {
 footer {
     height: 5rem;
     width: 100%;
-    position: absolute;
+    /* position: absolute; */
     bottom: 0;
     display: flex;
     background-color: var(--secondary);
@@ -276,7 +278,7 @@ footer {
     display: flex;
     height: 74vh;
     justify-content: space-evenly;
-    margin: 6rem 0;
+    margin: 7rem 0 3rem;
 }
 
 .control-panel,
@@ -379,6 +381,10 @@ footer {
 
 .exec-process .process-burst-time::before{
     content: "STOP: ";
+}
+
+.ready-process {
+    background-color: var(--success);
 }
 
 .stats {

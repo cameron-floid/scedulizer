@@ -14,4 +14,4 @@ const QueueContainerWithName = ({ queueName, algorithmInfo, priorityInfo }) => {
 }
 
 
-module.exports = QueueContainerWithName;
+export default QueueContainerWithName;

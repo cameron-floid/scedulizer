@@ -5,7 +5,7 @@ import React from "react";
 const QueueRow = ({ index }) => {
     return (
         <tr id={`queue_${index}_row`}>
-            <td>Q{index}</td>
+            <td>Q{index + 1}</td>
             <td>
                 <select className="form-select" name={`algorithm_q${index}`}>
                     <option value="" disabled selected>Choose</option>
@@ -22,4 +22,4 @@ const QueueRow = ({ index }) => {
 } 
 
 
-module.exports = QueueRow;
+export default QueueRow;
