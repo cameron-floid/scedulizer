@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
-import QueueRow from "./queueRow";
-import ProcessRow from "./processRow";
-import Scheduler from "../models/scheduler";
-import Queue from "../models/queue";
-import Process from "../models/process";
-import ProcessElement from "./processElement";
-
-
+import QueueRow from "../queueRow";
+import ProcessRow from "../processRow";
+import Scheduler from "../../models/scheduler";
+import Queue from "../../models/queue";
+import Process from "../../models/process";
+import ProcessElement from "../processElement";
+import Stats from "./stats";
 
 // Constants for algorithm names
 const FCFS = 'fcfs';
@@ -16,36 +15,48 @@ const PRIORITY = 'priority';
 const RR = 'rr';
 const MQ = 'mq';
 
+const MAX_LIMIT = 50;
+
 const ViewPort = () => {
     const [algorithm, setAlgorithm] = useState(FCFS);
-    const [nqueues, setNqueues] = useState(0);
-    const [nprocesses, setNprocesses] = useState(0);
-
-    const scheduler = new Scheduler();
+    const [nqueues, setNqueues] = useState('');
+    const [nprocesses, setNprocesses] = useState('');
+    const [scheduler, setScheduler] = useState(new Scheduler());
 
     useEffect(() => {
         scheduler.addQueue(new Queue("Ready Queue", "", 0));
-    }, []);
+    }, [scheduler]);
 
     const handleAlgorithmChange = (e) => {
         setAlgorithm(e.target.value);
-        scheduler.clearQueues();
     };
 
     const handleNumberOfQueuesChange = (e) => {
-        setNqueues(e.target.value);
-        scheduler.clearQueues();
+        const value = parseInt(e.target.value, 10);
+
+        if (value > MAX_LIMIT) {
+            alert(`You can't enter more than ${MAX_LIMIT} queues`);
+            return;
+        }
+
+        setNqueues(isNaN(value) ? '' : value);
     };
 
     const handleNumberOfProcessesChange = (e) => {
-        setNprocesses(e.target.value);
-        scheduler.clearQueues();
+        const value = parseInt(e.target.value, 10);
+
+        if (value > MAX_LIMIT) {
+            alert(`You can't enter more than ${MAX_LIMIT} processes`);
+            return;
+        }
+
+        setNprocesses(isNaN(value) ? '' : value);
     };
 
     const resetStates = () => {
         setAlgorithm(FCFS);
-        setNqueues(0);
-        setNprocesses(0);
+        setNqueues('');
+        setNprocesses('');
         scheduler.clearQueues();
     };
 
@@ -65,11 +76,9 @@ const ViewPort = () => {
         if (addedProcess) {
             alert(`Added process ${processData.id} to ${queueName}`);
             console.log("RQ:\n\n");
-            console.log(scheduler.rq);
+            console.log(scheduler.rq.processes);
         }
     };
-
-
 
     return (
         <div className="view-port">
@@ -110,58 +119,51 @@ const ViewPort = () => {
                             </div>
                         </div>
 
-                        {
-                            algorithm === RR ? (
-                                <div id="time-quantum-group" className="form-group">
+                        {algorithm === RR && (
+                            <div id="time-quantum-group" className="form-group">
+                                <div className="form-row">
+                                    <h3 className="header-text">Time Quantum</h3>
+                                </div>
+                                <div className="form-row">
+                                    <input type="number" name="quantum" min="0" />
+                                </div>
+                            </div>
+                        )}
+
+                        {algorithm === MQ && (
+                            <>
+                                <div id="number-of-queues-group" className="form-group">
                                     <div className="form-row">
-                                        <h3 className="header-text">Time Quantum</h3>
+                                        <h3 className="header-text">Number of Queues</h3>
                                     </div>
                                     <div className="form-row">
-                                        <input type="number" name="quantum" min="0" />
+                                        <input type="number" value={nqueues} onChange={handleNumberOfQueuesChange} name="nqueues" id="nqueues" min="0" />
                                     </div>
                                 </div>
-                            ) : null
-                        }
 
-                        {
-                            algorithm === MQ ? (
-                                <>
-                                    <div id="number-of-queues-group" className="form-group">
-                                        <div className="form-row">
-                                            <h3 className="header-text">Number of Queues</h3>
-                                        </div>
-                                        <div className="form-row">
-                                            <input type="number" value={nqueues} onChange={handleNumberOfQueuesChange} name="nqueues" id="nqueues" min="0" />
-                                        </div>
+                                <div id="queue-attributes-group" className="form-group">
+                                    <div className="form-row">
+                                        <h3 className="header-text">Queue Attributes</h3>
                                     </div>
-
-                                    <div id="queue-attributes-group" className="form-group">
-                                        <div className="form-row">
-                                            <h3 className="header-text">Queue Attributes</h3>
-                                        </div>
-                                        <div className="form-row">
-                                            <table>
-                                                <thead>
-                                                    <tr>
-                                                        <th>Queue</th>
-                                                        <th>Algorithm</th>
-                                                        <th>Priority</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody id="queue-attributes-body">
-                                                    {
-                                                        Array.from({ length: nqueues }, (_, i) => (
-                                                            <QueueRow key={i} index={i} />
-                                                        ))
-                                                    }
-                                                </tbody>
-                                            </table>
-                                        </div>
+                                    <div className="form-row">
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>Queue</th>
+                                                    <th>Algorithm</th>
+                                                    <th>Priority</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="queue-attributes-body">
+                                                {Array.from({ length: nqueues }, (_, i) => (
+                                                    <QueueRow key={i} index={i} />
+                                                ))}
+                                            </tbody>
+                                        </table>
                                     </div>
-                                </>
-                            ) : null
-                        }
-
+                                </div>
+                            </>
+                        )}
 
                         <div className="form-group">
                             <div className="form-row">
@@ -183,32 +185,25 @@ const ViewPort = () => {
                                             <th id="arrivalimeHeader">Arrival Time</th>
                                             <th id="burstTimeHeader">Burst Time</th>
 
-                                            {
-                                                algorithm === PRIORITY ? (
-                                                    <th id="priorityHeader">Priority</th>
-                                                ) : null
-                                            }
+                                            {algorithm === PRIORITY && (
+                                                <th id="priorityHeader">Priority</th>
+                                            )}
 
-                                            {
-                                                algorithm === MQ ? (
-                                                    <th id="queueHeader">Queue Number</th>
-                                                ) : null
-                                            }
-
+                                            {algorithm === MQ && (
+                                                <th id="queueHeader">Queue Number</th>
+                                            )}
                                         </tr>
                                     </thead>
                                     <tbody id="process-attributes-body">
-                                        {
-                                            Array.from({ length: nprocesses }, (_, i) => (
-                                                <ProcessRow
-                                                    key={i}
-                                                    index={i}
-                                                    showPriorityCol={algorithm === PRIORITY}
-                                                    showQueueCol={algorithm === MQ}
-                                                    onAllProcessVariablesSet={handleAddProcesses}
-                                                />
-                                            ))
-                                        }
+                                        {Array.from({ length: nprocesses }, (_, i) => (
+                                            <ProcessRow
+                                                key={i}
+                                                index={i}
+                                                showPriorityCol={algorithm === PRIORITY}
+                                                showQueueCol={algorithm === MQ}
+                                                onAllProcessVariablesSet={handleAddProcesses}
+                                            />
+                                        ))}
                                     </tbody>
                                 </table>
                             </div>
@@ -221,27 +216,20 @@ const ViewPort = () => {
                 </div>
             </div>
             <div className="visual-panel scrollable">
-
                 <div className="visual-group">
                     <div className="first-row queue-row header-text-row">
                         <h3 className="header-text">Queues</h3>
                     </div>
                     <div id="queues">
                         {algorithm !== MQ && (
-                            <div id="rq-container" className="queue-container">
+                            <div className="queue-container">
                                 <div className="queue-row header-text-row">
                                     <h3 className="header-text">R.Q</h3>
                                 </div>
                                 <div id="rq" className="queue-row queue horizontal-scroll">
-                                    <ProcessElement
-                                        key={0}
-                                        id={0}
-                                        arrivalTime={0}
-                                        burstTime={0}
-                                    />
-                                    {scheduler.rq.processes.map((process, index) => (
+                                    {scheduler.rq.processes.map((process) => (
                                         <ProcessElement
-                                            key={index}
+                                            key={process.id}
                                             id={process.id}
                                             arrivalTime={process.arrivalTime}
                                             burstTime={process.burstTime}
@@ -249,6 +237,31 @@ const ViewPort = () => {
                                     ))}
                                 </div>
                             </div>
+                        )}
+                        {algorithm === MQ && (
+                            scheduler.queues.map((queue, index) => (
+                                <div key={index} className="queue-container">
+                                    <div className="queue-row header-text-row">
+                                        <h3 className="header-text">Q{index + 1}</h3>
+                                    </div>
+                                    <div id="rq" className="queue-row queue horizontal-scroll">
+                                        <ProcessElement
+                                            key={0}
+                                            id={0}
+                                            arrivalTime={0}
+                                            burstTime={0}
+                                        />
+                                        {queue.processes.map((process) => (
+                                            <ProcessElement
+                                                key={process.id}
+                                                id={process.id}
+                                                arrivalTime={process.arrivalTime}
+                                                burstTime={process.burstTime}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            ))
                         )}
                     </div>
                 </div>
@@ -258,43 +271,10 @@ const ViewPort = () => {
                         <h3 className="header-text">Gantt Chart</h3>
                     </div>
                     <div id="ganttchart" className="ganttchart-row ganttchart horizontal-scroll">
-                        {/* Gantt chart content */}
+                        {/* Gantt chart content (process components) */}
                     </div>
                 </div>
-                <div className="stats">
-                    <h3 className="header-text">CPU Utilisation Metrics</h3>
-                    <div className="stat-row">
-                        <div className="stat-box">
-                            <h3 className="header-text">Time Metrics</h3>
-                            <div className="metric clock">
-                                <p className="metric-label">Tick</p>
-                                <p className="metric-value">2909</p>
-                            </div>
-                            <div className="metric">
-                                <p className="metric-label">Total Ticks</p>
-                                <p className="metric-value">2909</p>
-                            </div>
-                            <div className="metric">
-                                <p className="metric-label">First Process Start</p>
-                                <p className="metric-value">0</p>
-                            </div>
-                            <div className="metric">
-                                <p className="metric-label">Last Process End</p>
-                                <p className="metric-value">2909</p>
-                            </div>
-                            <div className="metric">
-                                <p className="metric-label">Total Used Ticks</p>
-                                <p className="metric-value">2909</p>
-                            </div>
-                            <div className="metric">
-                                <p className="metric-label">Total Unused Ticks</p>
-                                <p className="metric-value">2909</p>
-                            </div>
-                        </div>
-                        <div className="stat-box"></div>
-                        <div className="stat-box"></div>
-                    </div>
-                </div>
+                <Stats />
             </div>
         </div>
     );

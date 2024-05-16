@@ -5,7 +5,10 @@
     --primary: #FD8D14;
     --text-light: #F4F4F2;
     --text-dark: #495464;
-    --success: #59CE8F;
+    --success: #4CCD99;
+    --success-secondary: #007F73;
+    --waring: #FFF455;
+    --warning-secondary: #FFC700;
     --alert: #FF1E00;
 }
 
@@ -385,6 +388,10 @@ footer {
 
 .ready-process {
     background-color: var(--success);
+}
+
+.ready-process:nth-child(even) {
+    background-color: var(--success-secondary) !important;
 }
 
 .stats {
