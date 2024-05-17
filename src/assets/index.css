@@ -7,9 +7,39 @@
     --text-dark: #495464;
     --success: #4CCD99;
     --success-secondary: #007F73;
-    --waring: #FFF455;
+    --warning: #FFF455;
     --warning-secondary: #FFC700;
-    --alert: #FF1E00;
+    --error: #FF1E00;
+}
+
+.message {
+    z-index: 1000;
+    display: flex;
+    width: 50rem;
+    height: 5rem;
+    color: var(--text-light);
+    position: fixed;
+    font-size: 1rem;
+    justify-content: center;
+    align-items: center;
+    opacity: 1;
+}
+
+.message.fade-out {
+    opacity: 0;
+    transition: opacity 3s;
+}
+
+.success {
+    background-color: var(--success);
+}
+
+.warning {
+    background-color: var(--warning-secondary); 
+}
+
+.error {
+    background-color: var(--error);
 }
 
 @font-face {

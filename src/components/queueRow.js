@@ -2,7 +2,7 @@ import React from "react";
 
 
 // QueueRow
-const QueueRow = ({ index }) => {
+const QueueRow = ({ index, showPriorityCol }) => {
     return (
         <tr id={`queue_${index}_row`}>
             <td>Q{index + 1}</td>
@@ -16,7 +16,7 @@ const QueueRow = ({ index }) => {
                     <option value="rr">RR</option>
                 </select>
             </td>
-            <td><input type="number" name={`priority_q${index}`} min="0" /></td>
+            {showPriorityCol && <td><input type="number" name={`priority_q${index}`} min="0" /></td>}
         </tr>
     );
 } 

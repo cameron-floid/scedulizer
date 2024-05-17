@@ -6,14 +6,10 @@ import Queue from "../../models/queue";
 import Process from "../../models/process";
 import ProcessElement from "../processElement";
 import Stats from "./stats";
+import { capitalize } from "../../utils/stringFunctions";
+import { FCFS, SJF, SRJF, PRIORITY, RR, MQ } from "../../utils/consts"
 
-// Constants for algorithm names
-const FCFS = 'fcfs';
-const SJF = 'sjf';
-const SRJF = 'srjf';
-const PRIORITY = 'priority';
-const RR = 'rr';
-const MQ = 'mq';
+
 
 const MAX_LIMIT = 50;
 
@@ -22,31 +18,57 @@ const ViewPort = () => {
     const [nqueues, setNqueues] = useState('');
     const [nprocesses, setNprocesses] = useState('');
     const [scheduler, setScheduler] = useState(new Scheduler());
+    const [message, setMessage] = useState({});
+    const [fade, setFade] = useState(false);
 
     useEffect(() => {
         scheduler.addQueue(new Queue("Ready Queue", "", 0));
     }, [scheduler]);
 
+    useEffect(() => {
+        if (message.content) {
+            setFade(false); // Ensure the message appears abruptly
+            const fadeOutTimeout = setTimeout(() => {
+                setFade(true); // Trigger the fade-out after 3 seconds
+                const clearMessageTimeout = setTimeout(() => {
+                    setMessage({}); // Clear the message after it fades out
+                }, 3000); // Duration of the fade-out
+
+                return () => clearTimeout(clearMessageTimeout); // Cleanup the timeout
+            }, 3000); // Show the message for 3 seconds before starting fade out
+
+            return () => clearTimeout(fadeOutTimeout); // Cleanup the fade-out timeout
+        }
+    }, [message]);
+
     const handleAlgorithmChange = (e) => {
         setAlgorithm(e.target.value);
+        scheduler.clearQueues();
     };
 
     const handleNumberOfQueuesChange = (e) => {
         const value = parseInt(e.target.value, 10);
 
         if (value > MAX_LIMIT) {
-            alert(`You can't enter more than ${MAX_LIMIT} queues`);
+            handleSetMessage("warning", `You can't enter more than ${MAX_LIMIT} queues`);
             return;
         }
 
         setNqueues(isNaN(value) ? '' : value);
+
+        if (nqueues) {
+            scheduler.queues = [];
+            for (let i = 0; i < nqueues; i++) {
+                scheduler.appendQueue();
+            }
+        }
     };
 
     const handleNumberOfProcessesChange = (e) => {
         const value = parseInt(e.target.value, 10);
 
         if (value > MAX_LIMIT) {
-            alert(`You can't enter more than ${MAX_LIMIT} processes`);
+            handleSetMessage("warning", `You can't enter more than ${MAX_LIMIT} processes`);
             return;
         }
 
@@ -65,7 +87,7 @@ const ViewPort = () => {
         let queueName;
         let addedProcess = false;
 
-        if (algorithm === MQ) {
+        if (algorithm === MQ || algorithm === RR) {
             addedProcess = scheduler.queues[processData.queueNumber].enqueue(process);
             queueName = `Q${processData.queueNumber}`;
         } else {
@@ -74,14 +96,31 @@ const ViewPort = () => {
         }
 
         if (addedProcess) {
-            alert(`Added process ${processData.id} to ${queueName}`);
-            console.log("RQ:\n\n");
-            console.log(scheduler.rq.processes);
+            handleSetMessage("success", `Added P${processData.id} to ${queueName}`);
         }
     };
 
+    const handleSetMessage = (type, content) => {
+        setMessage({
+            type,
+            content
+        });
+    };
+
+    const handleProcessUpdate = (updatedProcess) => {
+        scheduler.updateProcess(algorithm, updatedProcess, handleSetMessage);
+    };    
+
     return (
         <div className="view-port">
+            {
+                message && Object.keys(message).length > 0 ? (
+                    <div className={`message ${message.type} ${fade ? 'fade-out' : ''}`}>
+                        <p>{capitalize(message.type)}, {message.content}</p>
+                    </div>
+                ) : null
+            }
+
             <div className="control-panel scrollable">
                 <div className="container">
                     <form action="">
@@ -130,7 +169,7 @@ const ViewPort = () => {
                             </div>
                         )}
 
-                        {algorithm === MQ && (
+                        {(algorithm === MQ || algorithm === RR) && (
                             <>
                                 <div id="number-of-queues-group" className="form-group">
                                     <div className="form-row">
@@ -151,12 +190,12 @@ const ViewPort = () => {
                                                 <tr>
                                                     <th>Queue</th>
                                                     <th>Algorithm</th>
-                                                    <th>Priority</th>
+                                                    {algorithm === MQ && <th>Priority</th>}
                                                 </tr>
                                             </thead>
                                             <tbody id="queue-attributes-body">
                                                 {Array.from({ length: nqueues }, (_, i) => (
-                                                    <QueueRow key={i} index={i} />
+                                                    <QueueRow key={i} index={i} showPriorityCol={algorithm === MQ}/>
                                                 ))}
                                             </tbody>
                                         </table>
@@ -189,7 +228,7 @@ const ViewPort = () => {
                                                 <th id="priorityHeader">Priority</th>
                                             )}
 
-                                            {algorithm === MQ && (
+                                            {(algorithm === MQ || algorithm === RR) && (
                                                 <th id="queueHeader">Queue Number</th>
                                             )}
                                         </tr>
@@ -199,9 +238,12 @@ const ViewPort = () => {
                                             <ProcessRow
                                                 key={i}
                                                 index={i}
+                                                maxQueue={nqueues}
                                                 showPriorityCol={algorithm === PRIORITY}
-                                                showQueueCol={algorithm === MQ}
+                                                showQueueCol={algorithm === MQ || algorithm === RR}
                                                 onAllProcessVariablesSet={handleAddProcesses}
+                                                handleSetMessage={handleSetMessage}
+                                                onProcessUpdate={handleProcessUpdate}
                                             />
                                         ))}
                                     </tbody>
@@ -244,13 +286,7 @@ const ViewPort = () => {
                                     <div className="queue-row header-text-row">
                                         <h3 className="header-text">Q{index + 1}</h3>
                                     </div>
-                                    <div id="rq" className="queue-row queue horizontal-scroll">
-                                        <ProcessElement
-                                            key={0}
-                                            id={0}
-                                            arrivalTime={0}
-                                            burstTime={0}
-                                        />
+                                    <div id={queue.name} className="queue-row queue horizontal-scroll">
                                         {queue.processes.map((process) => (
                                             <ProcessElement
                                                 key={process.id}

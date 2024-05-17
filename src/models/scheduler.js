@@ -1,4 +1,6 @@
 import Queue from "./queue";
+import { RR, MQ } from "../utils/consts"
+
 
 class Scheduler {
     constructor() {
@@ -12,6 +14,10 @@ class Scheduler {
         this.processInterval = setInterval(() => {
             this.checkQueues();
         }, 1000);
+    }
+
+    appendQueue() {
+        this.queues.push(new Queue(`Q${this.queues.length + 1}`, null, null))
     }
 
     addQueue(queue) {
@@ -32,6 +38,43 @@ class Scheduler {
 
     findProcessByIdInRq(processId) {
         return this.rq.findProcessById(processId);
+    }
+
+    updateProcess(algorithm, updatedProcess, handleSetMessage) {
+        if (algorithm === MQ || algorithm === RR) {
+
+            // Find the process in the specified queue
+            const queueNumber = updatedProcess.queueNumber;
+            const queue = this.queues[queueNumber];
+
+            if (!queue) {
+                handleSetMessage("error", `Queue Q${queueNumber} does not exist.`);
+                return;
+            }
+
+            // Find and update the process
+            const processIndex = queue.processes.findIndex(p => p.id === updatedProcess.id);
+            if (processIndex !== -1) {
+                queue.processes[processIndex] = updatedProcess;
+                queue.sortByArrivalTime();
+
+                handleSetMessage("success", `Updated P${updatedProcess.id} in queue Q${queueNumber}.`);
+            } else {
+                handleSetMessage("error", `Process P${updatedProcess.id} not found in queue Q${queueNumber}.`);
+            }
+        } else {
+            // For other algorithms, assume the process is in the ready queue
+            const processIndex = this.rq.processes.findIndex(p => p.id === updatedProcess.id);
+            if (processIndex !== -1) {
+                // Update the process in the ready queue
+                this.rq.processes[processIndex] = updatedProcess;
+                this.rq.sortByArrivalTime();
+                
+                handleSetMessage("success", `Updated P${updatedProcess.id} in the ready queue.`);
+            } else {
+                handleSetMessage("error", `Process P${updatedProcess.id} not found in the ready queue.`);
+            }
+        }
     }
 
     removeQueue(queueName) {

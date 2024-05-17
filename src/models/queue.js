@@ -20,11 +20,13 @@ class Queue {
 
     enqueue(process) {
         const existingProcess = this.processes.find(p => p.id === process.id);
-    
+
         if (existingProcess) {
             return false;
         } else {
             this.processes.push(process);
+            this.sortByArrivalTime();
+            
             return true;
         }
     }
@@ -41,6 +43,15 @@ class Queue {
             throw new Error("Queue is empty");
         }
         return this.processes[0];
+    }
+
+    sortByArrivalTime() {
+        // Sort processes by arrival time
+        this.processes.sort((a, b) => a.arrivalTime - b.arrivalTime);
+    }
+
+    sortByBurstTime() {
+        this.processes.sort((a, b) => a.burstTime - b.burstTime);
     }
 
     removeProcess(processId) {
